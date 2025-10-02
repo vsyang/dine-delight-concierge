@@ -1,0 +1,12 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Italiana', 'Mulish', sans-serif;
+}
+body {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    background-color: #003049;
+    color: #fdf0d5;
+}
