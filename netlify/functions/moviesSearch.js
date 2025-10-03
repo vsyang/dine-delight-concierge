@@ -1,40 +1,52 @@
-// Node 18+ on Netlify has native fetch
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: corsHeaders(event) };
+// // netlify/functions/moviesSearch.js
+// // Example RapidAPI movie search via server function.
+// // Uses Movies Database (RapidAPI) as a demo; adjust as needed.
 
-  try {
-    const q = (event.queryStringParameters?.q || '').trim();
-    const upstream = await fetch(
-      `https://moviedatabase8.p.rapidapi.com/Search/${encodeURIComponent(q)}`,
-      {
-        headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-          'x-rapidapi-host': 'moviedatabase8.p.rapidapi.com'
-        }
-      }
-    );
+// export async function handler(event) {
+//   try {
+//     const key = import.meta.env.RAPIDAPI_KEY;
 
-    const body = await upstream.text();
-    return {
-      statusCode: upstream.status,
-      headers: { ...corsHeaders(event), 'content-type': upstream.headers.get('content-type') || 'application/json' },
-      body
-    };
-  } catch (err) {
-    return json(500, { error: 'Proxy error' }, event);
-  }
-};
+//     const qp = new URLSearchParams(event.queryStringParameters || {});
+//     const q = (qp.get("q") || "").trim();
+//     if (!q) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "Missing q" }) };
+//     }
 
-function corsHeaders(event) {
-  // If frontend is same Netlify site, CORS is effectively same-origin.
-  const origin = event.headers?.origin || '*';
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400'
-  };
-}
-function json(statusCode, obj, event) {
-  return { statusCode, headers: { ...corsHeaders(event), 'content-type': 'application/json' }, body: JSON.stringify(obj) };
-}
+//     // Movies Database API: https://moviesdatabase.p.rapidapi.com/
+//     // Title search endpoint pattern:
+//     // /titles/search/title/{title}?exact=false&titleType=movie
+//     const upstream = new URL(
+//       `https://moviesdatabase.p.rapidapi.com/titles/search/title/${encodeURIComponent(q)}`
+//     );
+//     upstream.searchParams.set("exact", "false");
+//     upstream.searchParams.set("titleType", "movie");
+
+//     const response = await fetch(upstream, {
+//       method: "GET",
+//       headers: {
+//         "x-rapidapi-key": key,
+//         "x-rapidapi-host": "moviesdatabase.p.rapidapi.com",
+//       },
+//     });
+
+//     const text = await response.text();
+//     if (!response.ok) {
+//       return {
+//         statusCode: response.status,
+//         body: JSON.stringify({ error: "Upstream error", upstream: text }),
+//         headers: { "Content-Type": "application/json" },
+//       };
+//     }
+
+//     let body;
+//     try { body = JSON.parse(text); } catch { body = text; }
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify(body),
+//       headers: { "Content-Type": "application/json" },
+//     };
+//   } catch (err) {
+//     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+//   }
+// }

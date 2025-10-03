@@ -1,16 +1,13 @@
-// When site + functions are both on Netlify, relative paths just work.
-export async function searchMovie(q) {
-  const res = await fetch(`/.netlify/functions/movies-search?q=${encodeURIComponent(q)}`);
-  if (!res.ok) throw new Error('Movie API error');
-  return res.json();
+// src/apiReader.js
+const FN = "/.netlify/functions";
+
+async function fetchJSON(url) {
+  const r = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
 }
 
-export async function getUberEats(params) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`/.netlify/functions/ubereats?${qs}`);
-  if (!res.ok) throw new Error('UberEats API error');
-  return res.json();
-}
+export const callFn = (name, params = {}) =>
+  fetchJSON(`${FN}/${name}?${new URLSearchParams(params).toString()}`);
 
-// Example quick test:
-searchMovie('Incep').then(console.log).catch(console.error);
+export { FN };

@@ -1,46 +1,52 @@
-exports.handler = async (event) => {
-  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: corsHeaders(event) };
+// export async function handler(event) {
+//   try {
+//     const key = process.env.RAPIDAPI_KEY; // secret lives on server
+//     if (!key) {
+//       return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
+//     }
 
-  try {
-    const qs = event.queryStringParameters || {};
-    const address = qs.address || '';
-    const resName = qs.resName || '';
-    const country = qs.country || '';
-    const city    = qs.city || '';
+//     // Read incoming query params from the browser request
+//     const qp = new URLSearchParams(event.queryStringParameters || {});
+//     const address = qp.get("address");
+//     const resName = qp.get("resName");
+//     const country = qp.get("country");
+//     const city = qp.get("city");
 
-    const target = `https://eater_ubereats.p.rapidapi.com/getUberEats` +
-                   `?address=${encodeURIComponent(address)}` +
-                   `&resName=${encodeURIComponent(resName)}` +
-                   `&country=${encodeURIComponent(country)}` +
-                   `&city=${encodeURIComponent(city)}`;
+//     // Build upstream UberEats RapidAPI URL
+//     const upstreamUrl = `https://eater-ubereats.p.rapidapi.com/getUberEats?${new URLSearchParams({
+//       address,
+//       resName,
+//       country,
+//       city,
+//     }).toString()}`;
 
-    const upstream = await fetch(target, {
-      headers: {
-        'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-        'x-rapidapi-host': 'eater_ubereats.p.rapidapi.com'
-      }
-    });
+//     const response = await fetch(upstreamUrl, {
+//       method: "GET",
+//       headers: {
+//         "x-rapidapi-key": key,
+//         "x-rapidapi-host": "eater-ubereats.p.rapidapi.com",
+//       },
+//     });
 
-    const body = await upstream.text();
-    return {
-      statusCode: upstream.status,
-      headers: { ...corsHeaders(event), 'content-type': upstream.headers.get('content-type') || 'application/json' },
-      body
-    };
-  } catch (err) {
-    return json(500, { error: 'Proxy error' }, event);
-  }
-};
+//     const text = await response.text();
+//     if (!response.ok) {
+//       return {
+//         statusCode: response.status,
+//         body: JSON.stringify({ error: "Upstream error", upstream: text }),
+//         headers: { "Content-Type": "application/json" },
+//       };
+//     }
 
-function corsHeaders(event) {
-  const origin = event.headers?.origin || '*';
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400'
-  };
-}
-function json(statusCode, obj, event) {
-  return { statusCode, headers: { ...corsHeaders(event), 'content-type': 'application/json' }, body: JSON.stringify(obj) };
-}
+//     // Try to parse JSON; if not JSON, return raw text
+//     let body;
+//     try { body = JSON.parse(text); } catch { body = text; }
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify(body),
+//       headers: { "Content-Type": "application/json" },
+//     };
+//   } catch (err) {
+//     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+//   }
+// }
