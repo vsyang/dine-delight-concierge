@@ -1,5 +1,26 @@
 {
   "devDependencies": {
     "netlify-cli": "^23.9.1"
-  }
+  },
+  "name": "dine-delight-concierge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "netlify dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vsyang/dine-delight-concierge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vsyang/dine-delight-concierge/issues"
+  },
+  "homepage": "https://github.com/vsyang/dine-delight-concierge#readme"
 }

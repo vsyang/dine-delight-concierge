@@ -1,0 +1,31 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Italiana', 'Mulish', sans-serif;
+}
+
+header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: #68798B;
+    color: #003049;
+    padding: 20px;
+    text-align: center;
+}
+
+.logo {
+    width: 150px;
+    height: auto;
+    margin: 20px;
+    border-radius: 80px;
+}
+
+body {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    background-color: #003049;
+    color: #fdf0d5;
+}
