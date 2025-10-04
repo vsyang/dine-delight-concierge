@@ -1,52 +1,49 @@
-// export async function handler(event) {
-//   try {
-//     const key = process.env.RAPIDAPI_KEY; // secret lives on server
-//     if (!key) {
-//       return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
-//     }
+const key = "process.env.RAPIDAPI_KEY"; // use to get key from .env
 
-//     // Read incoming query params from the browser request
-//     const qp = new URLSearchParams(event.queryStringParameters || {});
-//     const address = qp.get("address");
-//     const resName = qp.get("resName");
-//     const country = qp.get("country");
-//     const city = qp.get("city");
+export async function handler(event) {
+  try {
+    if (!key) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
+    }
 
-//     // Build upstream UberEats RapidAPI URL
-//     const upstreamUrl = `https://eater-ubereats.p.rapidapi.com/getUberEats?${new URLSearchParams({
-//       address,
-//       resName,
-//       country,
-//       city,
-//     }).toString()}`;
+    // Read query params from the browser request
+    const qp = new URLSearchParams(event.queryStringParameters || {});
+    const address = qp.get("address") || "1401 Alberni Street";
+    const resName = qp.get("resName") || "LE COQ FRIT";
+    const country = qp.get("country") || "Canada";
+    const city = qp.get("city") || "Vancouver";
 
-//     const response = await fetch(upstreamUrl, {
-//       method: "GET",
-//       headers: {
-//         "x-rapidapi-key": key,
-//         "x-rapidapi-host": "eater-ubereats.p.rapidapi.com",
-//       },
-//     });
+    const url = "https://eater_ubereats.p.rapidapi.com/getUberEats"; // keep what worked for you
+    const params = new URLSearchParams({ address, resName, country, city });
 
-//     const text = await response.text();
-//     if (!response.ok) {
-//       return {
-//         statusCode: response.status,
-//         body: JSON.stringify({ error: "Upstream error", upstream: text }),
-//         headers: { "Content-Type": "application/json" },
-//       };
-//     }
+    const r = await fetch(`${url}?${params}`, {
+      method: "GET",
+      headers: {
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": "eater_ubereats.p.rapidapi.com",
+        "accept": "application/json",
+      },
+    });
 
-//     // Try to parse JSON; if not JSON, return raw text
-//     let body;
-//     try { body = JSON.parse(text); } catch { body = text; }
+    const text = await r.text();
+    if (!r.ok) {
+      return {
+        statusCode: r.status,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Upstream error", body: text }),
+      };
+    }
 
-//     return {
-//       statusCode: 200,
-//       body: JSON.stringify(body),
-//       headers: { "Content-Type": "application/json" },
-//     };
-//   } catch (err) {
-//     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
-//   }
-// }
+    // Try JSON; fall back to text
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
+}

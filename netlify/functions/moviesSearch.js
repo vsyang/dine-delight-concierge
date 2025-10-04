@@ -1,52 +1,33 @@
-// // netlify/functions/moviesSearch.js
-// // Example RapidAPI movie search via server function.
-// // Uses Movies Database (RapidAPI) as a demo; adjust as needed.
+export async function handler(event) {
+  const key = process.env.RAPIDAPI_KEY; // set this in Netlify env 
+  if (!key) return { statusCode: 500, body: JSON.stringify({ error: 'Missing RAPIDAPI_KEY' }) };
 
-// export async function handler(event) {
-//   try {
-//     const key = import.meta.env.RAPIDAPI_KEY;
+  const q = event.queryStringParameters || {};
 
-//     const qp = new URLSearchParams(event.queryStringParameters || {});
-//     const q = (qp.get("q") || "").trim();
-//     if (!q) {
-//       return { statusCode: 400, body: JSON.stringify({ error: "Missing q" }) };
-//     }
+  const allowed = [
+    'MinRating','MinYear','MaxYear',
+    'Genre','OriginalLanguage','SpokenLanguage','Limit'
+  ];
+  const search = new URLSearchParams();
+  for (const k of allowed) if (q[k] != null && String(q[k]).trim() !== '') search.set(k, q[k]);
 
-//     // Movies Database API: https://moviesdatabase.p.rapidapi.com/
-//     // Title search endpoint pattern:
-//     // /titles/search/title/{title}?exact=false&titleType=movie
-//     const upstream = new URL(
-//       `https://moviesdatabase.p.rapidapi.com/titles/search/title/${encodeURIComponent(q)}`
-//     );
-//     upstream.searchParams.set("exact", "false");
-//     upstream.searchParams.set("titleType", "movie");
+  const upstream = `https://moviedatabase8.p.rapidapi.com/Filter?${search}`;
 
-//     const response = await fetch(upstream, {
-//       method: "GET",
-//       headers: {
-//         "x-rapidapi-key": key,
-//         "x-rapidapi-host": "moviesdatabase.p.rapidapi.com",
-//       },
-//     });
-
-//     const text = await response.text();
-//     if (!response.ok) {
-//       return {
-//         statusCode: response.status,
-//         body: JSON.stringify({ error: "Upstream error", upstream: text }),
-//         headers: { "Content-Type": "application/json" },
-//       };
-//     }
-
-//     let body;
-//     try { body = JSON.parse(text); } catch { body = text; }
-
-//     return {
-//       statusCode: 200,
-//       body: JSON.stringify(body),
-//       headers: { "Content-Type": "application/json" },
-//     };
-//   } catch (err) {
-//     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
-//   }
-// }
+  try {
+    const resp = await fetch(upstream, {
+      headers: {
+        'x-rapidapi-key': key,
+        'x-rapidapi-host': 'moviedatabase8.p.rapidapi.com',
+        'accept': 'application/json'
+      }
+    });
+    const text = await resp.text();
+    return {
+      statusCode: resp.ok ? 200 : resp.status,
+      headers: { 'Content-Type': 'application/json' },
+      body: resp.ok ? text : JSON.stringify({ error: 'Upstream error', body: text })
+    };
+  } catch (e) {
+    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
+  }
+}
