@@ -2,7 +2,6 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Italiana', 'Mulish', sans-serif;
 }
 
 header {
@@ -23,16 +22,29 @@ header {
     border-radius: 80px;
 }
 
-header h1 {
-    font-family: 'Mulish', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 900;
-    margin-left: 20px;
-}
-
 body {
+    display: grid;
+    grid-template-rows: 150px 1fr 75pxpx;
     font-size: 1.25rem;
     line-height: 1.6;
     background-color: #003049;
     color: #fdf0d5;
+    font-family: "Mulish", sans-serif;
+    margin: 16px;
+}
+
+header h1 {
+    font-family: 'Italiana', sans-serif;
+    font-size: 30px;
+    font-weight: 900;
+}
+button {
+    background: linear-gradient(90deg, #e9bfd4, #eb8cf8);
+    width: 80%;
+    height: 60px;
+    margin: 10%;
+    border-radius: 20px;
+}
+footer {
+    grid-row: 3/4;
 }
