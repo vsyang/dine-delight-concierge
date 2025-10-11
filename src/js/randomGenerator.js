@@ -1,140 +1,119 @@
-// randomGenerator.js
 import { getUberEats } from "./restaurant.js";
 
-const DEFAULTS = { zip: "80233", category: "Pizza" };
+const CATEGORIES = [
+  "Pizza","Burgers","Sushi","Tacos","Thai","Indian",
+  "Chinese","BBQ","Vegan","Desserts","Breakfast"
+];
 
-function readPrefs() {
-  const saved = (() => { try { return JSON.parse(localStorage.getItem("ddc:prefs") || "{}"); } catch { return {}; } })();
-  const category = document.getElementById("foodCategory")?.value?.trim() || saved.category || DEFAULTS.category;
-  const zip = document.getElementById("zip")?.value?.trim() || saved.zip || DEFAULTS.zip;
-  return { category, zip };
-}
-function savePrefs(p) { localStorage.setItem("ddc:prefs", JSON.stringify(p)); }
+const btn = document.getElementById("surpriseBtn");
+const statusEl = document.getElementById("results");   // optional status area
+const cardEl = document.getElementById("randomCard");  // result.html target
 
-function loadCachedItems() {
-  try {
-    const obj = JSON.parse(localStorage.getItem("ddc:last"));
-    return Array.isArray(obj?.items) ? obj.items : [];
-  } catch { return []; }
-}
-function saveCache(items) {
-  localStorage.setItem("ddc:last", JSON.stringify({ ts: Date.now(), items }));
-}
-function uniqByName(arr) {
-  const seen = new Set();
-  return arr.filter(it => {
-    const key = (it?.name || "").toLowerCase().trim();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-function sample(arr) { return arr.length ? arr[Math.floor(Math.random() * arr.length)] : null; }
-function renderStatus(msg) {
-  const res = document.getElementById("results");
-  if (res) res.innerHTML = `<p>${msg}</p>`;
+function sample(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-async function ensureItems() {
-  // 1) try cache
-  let items = uniqByName(loadCachedItems());
-  if (items.length) return items;
-
-  // 2) fetch using current (or default) prefs
-  const { category, zip } = readPrefs();
-  savePrefs({ category, zip });
-  renderStatus(`Searching for ${category} near ${zip}…`);
-
-  try {
-    const data = await getUberEats({ address: zip, resName: category });
-    const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
-    items = uniqByName(list);
-    if (items.length) saveCache(items);
-    return items;
-  } catch (err) {
-    console.error("SurpriseMe fetch failed:", err);
-    throw new Error("We couldn’t reach the food service right now. Please try again shortly.");
-  }
+function parseItems(data) {
+  // API sometimes returns raw array, sometimes { data: [...] }
+  return Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
 }
 
-export async function chooseAndPersist() {
-  const btn = document.getElementById("surpriseBtn");
-  if (btn) { btn.disabled = true; btn.textContent = "Choosing…"; }
-
-  try {
-    const items = await ensureItems();
-    const pick = sample(items);
-    if (!pick) {
-      renderStatus("No results yet. Try a different category or ZIP.");
-      return;
-    }
-
-    localStorage.setItem("ddc:pick", JSON.stringify(pick));
-
-    // if on result.html, render immediately; otherwise navigate there
-    if (document.getElementById("randomCard")) {
-      renderPick(pick);
-    } else {
-      window.location.href = "/result.html";
-    }
-  } catch (e) {
-    renderStatus(e.message || "Something went wrong.");
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "Surprise me"; }
-  }
+function getZip() {
+  const zEl = document.getElementById("zip");
+  const z = zEl?.value?.trim();
+  if (z) localStorage.setItem("ddc:lastZip", z);
+  return z || localStorage.getItem("ddc:lastZip") || "80233";
 }
 
-// ---------- result.html support ----------
-function loadPick() {
-  try { return JSON.parse(localStorage.getItem("ddc:pick")); } catch { return null; }
+function showStatus(msg) {
+  if (statusEl) statusEl.innerHTML = `<p>${msg}</p>`;
 }
 
-export function renderPick(pick) {
-  const el = document.getElementById("randomCard");
-  if (!el) return;
+function savePick(pick) {
+  localStorage.setItem("ddc:pick", JSON.stringify(pick));
+}
 
-  if (!pick) {
-    el.innerHTML = `<p class="muted">No pick yet. Go back and hit “Surprise me”.</p>`;
-    return;
-  }
-
-  const name = pick?.name || "Unnamed";
-  const price = pick?.price || "";
-  const rating = pick?.rating || "";
-  const img = pick?.imageUrl ? `<img src="${pick.imageUrl}" alt="" onerror="this.style.display='none'">` : "";
-
-  el.innerHTML = `
+function renderPick(pick) {
+  if (!cardEl) return;
+  const { name, price = "", rating = "", imageUrl = "", category, zip } = pick;
+  const img = imageUrl ? `<img src="${imageUrl}" alt="" onerror="this.style.display='none'">` : "";
+  cardEl.innerHTML = `
     <article class="card">
       ${img}
-      <h2>${name}</h2>
-      <p>${[price, rating].filter(Boolean).join(" · ")}</p>
-      <div style="margin-top:.5rem">
-        <button id="rollAgain" type="button">Roll again</button>
-      </div>
+      <h3>${name}</h3>
+      <p>${price}${rating ? ` · ${rating}` : ""}</p>
+      <p class="muted">Category: ${category} · ZIP: ${zip}</p>
     </article>
   `;
-
-  document.getElementById("rollAgain")?.addEventListener("click", async () => {
-    try {
-      const items = await ensureItems();
-      const next = sample(items);
-      if (next) {
-        localStorage.setItem("ddc:pick", JSON.stringify(next));
-        renderPick(next);
-      }
-    } catch (e) {
-      renderStatus(e.message || "Couldn't roll again.");
-    }
-  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  // wire up the Surprise button on preferences.html
-  document.getElementById("surpriseBtn")?.addEventListener("click", chooseAndPersist);
+async function surpriseMe() {
+  if (btn) btn.disabled = true;
 
-  // if we’re already on result.html, show any existing pick
-  if (document.getElementById("randomCard")) {
-    const pick = loadPick();
-    if (pick) renderPick(pick);
+  const zip = getZip();
+  const tried = new Set();
+  let lastErr = null;
+
+  // Try up to 3 random categories in case a category returns nothing
+  for (let i = 0; i < 3; i++) {
+    const remaining = CATEGORIES.filter(c => !tried.has(c));
+    if (!remaining.length) break;
+
+    const category = sample(remaining);
+    tried.add(category);
+
+    showStatus(`Choosing a random category… <strong>${category}</strong> near ${zip}…`);
+
+    try {
+      const data = await getUberEats({ address: zip, resName: category });
+      const items = parseItems(data);
+      if (!items.length) {
+        continue; // try another category
+      }
+
+      const picked = sample(items);
+      const pick = {
+        name: picked?.name || "Unnamed item",
+        price: picked?.price || "",
+        rating: picked?.rating || "",
+        imageUrl: picked?.imageUrl || "",
+        category,
+        zip,
+        ts: Date.now(),
+      };
+
+      savePick(pick);
+
+      // If we're already on result.html (has #randomCard), render now.
+      if (cardEl) {
+        renderPick(pick);
+        showStatus(`Here’s your surprise pick!`);
+      } else {
+        // Otherwise go to result page to display it.
+        window.location.href = "/result.html";
+      }
+      return;
+    } catch (e) {
+      lastErr = e;
+      // try next category
+    }
   }
-});
+
+  const msg = lastErr?.message || "No results found after several tries.";
+  showStatus(`Couldn’t find a pick right now. ${msg}`);
+  if (btn) btn.disabled = false;
+}
+
+// If there’s a saved pick and the result card is present, render it immediately
+(function boot() {
+  if (cardEl) {
+    try {
+      const saved = JSON.parse(localStorage.getItem("ddc:pick") || "null");
+      if (saved) renderPick(saved);
+    } catch {}
+  }
+  if (btn) btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    surpriseMe();
+  });
+})();

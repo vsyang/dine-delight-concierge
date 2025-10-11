@@ -1,47 +1,43 @@
-const key = "process.env.RAPIDAPI_KEY"; // use to get key from .env
+const KEY = process.env.RAPIDAPI_KEY;
 
 export async function handler(event) {
   try {
-    if (!key) {
-      return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
-    }
+    const key = process.env.RAPIDAPI_KEY;
+    if (!key) return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
 
-    // Read query params from the browser request
     const qp = new URLSearchParams(event.queryStringParameters || {});
-    const address = qp.get("address") || "1401 Alberni Street";
-    const resName = qp.get("resName") || "LE COQ FRIT";
-    const country = qp.get("country") || "Canada";
-    const city = qp.get("city") || "Vancouver";
+    const address = qp.get("address") || "80233";
+    const resName = qp.get("resName") || "Thai";
+    const country = "United States";
 
-    const url = "https://eater_ubereats.p.rapidapi.com/getUberEats"; // keep what worked for you
-    const params = new URLSearchParams({ address, resName, country, city });
+    const url = "https://eater_ubereats.p.rapidapi.com/getUberEats";
+    const params = new URLSearchParams({ address, resName, country });
 
     const r = await fetch(`${url}?${params}`, {
-      method: "GET",
       headers: {
         "x-rapidapi-key": key,
         "x-rapidapi-host": "eater_ubereats.p.rapidapi.com",
-        "accept": "application/json",
+        accept: "application/json",
       },
     });
 
     const text = await r.text();
     if (!r.ok) {
-      return {
-        statusCode: r.status,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Upstream error", body: text }),
-      };
+      return { statusCode: r.status, headers: { "content-type": "application/json" },
+        body: JSON.stringify({ error: "Upstream error", body: text }) };
     }
 
-    // Try JSON; fall back to text
-    let data;
-    try { data = JSON.parse(text); } catch { data = text; }
+    let data; try { data = JSON.parse(text); } catch { data = text; }
+    const items = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+    const top5 = items.slice(0, 5);
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=300" // 5 min CDN cache
+      },
+      body: JSON.stringify({ items: top5 }),
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
