@@ -146,16 +146,14 @@ function setMovieResults(html) {
 
 function pickMovieImage(it) {
   const cands = [
-    it?.posterUrl, it?.posterURL, it?.poster_url, it?.poster,
-    it?.imageUrl, it?.image, it?.img, it?.thumbnail, it?.Poster
+    // IMDb236
+    it?.primaryImage?.url,        // sometimes object with url
+    typeof it?.primaryImage === 'string' ? it.primaryImage : null,
+    ...(Array.isArray(it?.thumbnails) ? it.thumbnails.map(t => t?.url) : []),
+    // other APIs fallbacks
+    it?.posterUrl, it?.Poster, it?.poster, it?.imageUrl, it?.image, it?.img, it?.thumbnail
   ].filter(Boolean);
-  for (const c of cands) {
-    if (typeof c === 'string' && /^https?:\/\//i.test(c)) return c;
-  }
-  if (typeof it?.poster_path === 'string' && it.poster_path.startsWith('/')) {
-    return `https://image.tmdb.org/t/p/w342${it.poster_path}`;
-  }
-  return null;
+  return cands.find(u => typeof u === 'string' && /^https?:\/\//i.test(u)) || null;
 }
 
 function renderMovies(items = []) {
@@ -164,12 +162,19 @@ function renderMovies(items = []) {
     return;
   }
   const cards = items.slice(0, 5).map(it => {
-    const title = it?.Title || it?.title || it?.name || it?.original_title || "Untitled";
-    const year = it?.Year || it?.year || (it?.release_date ? new Date(it.release_date).getFullYear() : "");
+    const title =
+      it?.primaryTitle || it?.originalTitle || // IMDb236
+      it?.Title || it?.title || it?.name || it?.original_title ||
+      it?.titleText?.text || "Untitled";
+
+    const year = it?.startYear || it?.Year || it?.year ||
+                 (it?.release_date ? new Date(it.release_date).getFullYear() : "");
+
     const rating = it?.Rating || it?.rating || it?.vote_average;
     const poster = pickMovieImage(it);
     const img = poster ? `<img src="${poster}" alt="" onerror="this.style.display='none'">` : "";
     const meta = [year ? `(${year})` : "", rating ? `⭐ ${rating}` : ""].filter(Boolean).join(" ");
+
     return `
       <article class="card">
         ${img}
@@ -180,6 +185,7 @@ function renderMovies(items = []) {
   }).join("");
   setMovieResults(`<div class="grid">${cards}</div>`);
 }
+
 
 const moviesCacheKey = (minYear, genre) => `ddc:movies:${minYear}:${genre}`;
 function saveMoviesCache(minYear, genre, items) {

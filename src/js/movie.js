@@ -24,7 +24,7 @@ async function ensureOk(resp) {
 
 const MOVIES_DIRECT_DEFAULT = import.meta.env.VITE_MOVIES_DIRECT === 'true';
 const RAPID_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-const MOVIES_HOST = 'moviedatabase8.p.rapidapi.com';
+const MOVIES_HOST = 'imbd236.p.rapidapi.com';
 const MOVIES_URL = `https://${MOVIES_HOST}/Filter`;
 
 /**
