@@ -10,7 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/base-DQM_IlgI.js"></script>
+  <script type="module" crossorigin src="/assets/preferences-BHIuT-6B.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/base-DQM_IlgI.js">
   <link rel="stylesheet" crossorigin href="/assets/base-DWu52g69.css">
 </head>
 <body>
@@ -22,12 +23,53 @@
     <main>
         <section class="intro">
             <h1>Welcome to Dine and Delight!</h1>
-            <p>Preferences page - insert way for user to set preferences</p>
-            
-
+            <div class="preference-form">
+                <p>Your food selection:</p>
+                
+                <section id="results" aria-live="polite" style="margin-top:1rem">
+                    <p class="muted">Pick a category and enter a ZIP to see results.</p>
+                </section>
+                    
+                <form id="foodForm">
+                    <label>
+                    Category
+                    <select id="foodCategory" name="category">
+                        <option value="" disabled selected hidden>Select Category</option>
+                        <option>Pizza</option>
+                        <option>Burgers</option>
+                        <option>Sushi</option>
+                        <option>Tacos</option>
+                        <option>Thai</option>
+                        <option>Indian</option>
+                        <option>Chinese</option>
+                        <option>BBQ</option>
+                        <option>Vegan</option>
+                        <option>Desserts</option>
+                        <option>Coffee</option>
+                        <option>Breakfast</option>
+                    </select>
+                    </label>
+    
+                    <label>
+                    Zip Code
+                    <input id="zip" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" required>
+                    </label>
+              
+                    <button type="submit" id="resultsBtn">Find food</button>
+                </form>
+            </div>
         </section>
 
         
+
+        <div class="results">
+            
+        </div>
+        <div class="homepage">
+            <a href="/index.html">
+                <button id="homepage">Return to Homepage</button>
+            </a>
+        </div>
     </main>
 
     <footer>
