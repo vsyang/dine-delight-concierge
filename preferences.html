@@ -58,11 +58,34 @@
             </div>
         </section>
 
-        
+        <section class="panel">
+            <h2>Find Movies</h2>
+            <form id="movieForm">
+                <div class="row">
+                <label for="movieGenre">Genre</label>
+                <select id="movieGenre" required>
+                    <option value="">Choose…</option>
+                    <option>Action</option>
+                    <option>Adventure</option>
+                    <option>Animation</option>
+                    <option>Comedy</option>
+                    <option>Drama</option>
+                    <option>Horror</option>
+                    <option>Romance</option>
+                    <option>Sci-Fi</option>
+                    <option>Thriller</option>
+                </select>
+                </div>
+                <div class="row">
+                <label for="minYear">Min Year</label>
+                <input id="minYear" type="number" min="1900" max="2100" step="1" placeholder="e.g., 2020" required>
+                </div>
+                <button id="movieResultsBtn" type="submit">Search Movies</button>
+            </form>
+            <section id="movieResults" class="results grid"></section>
+        </section>
 
-        <div class="results">
-            
-        </div>
+        <div class="results"></div>
         <div class="homepage">
             <a href="/index.html">
                 <button id="homepage">Return to Homepage</button>

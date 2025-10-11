@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/preferences-D1j7Zy15.js"></script>
+  <script type="module" crossorigin src="/assets/preferences-JNBpdp3b.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/base-DQM_IlgI.js">
   <link rel="modulepreload" crossorigin href="/assets/restaurant-CdretbXj.js">
   <link rel="stylesheet" crossorigin href="/assets/base-DWu52g69.css">
@@ -60,11 +60,34 @@
             </div>
         </section>
 
-        
+        <section class="panel">
+            <h2>Find Movies</h2>
+            <form id="movieForm">
+                <div class="row">
+                <label for="movieGenre">Genre</label>
+                <select id="movieGenre" required>
+                    <option value="">Choose…</option>
+                    <option>Action</option>
+                    <option>Adventure</option>
+                    <option>Animation</option>
+                    <option>Comedy</option>
+                    <option>Drama</option>
+                    <option>Horror</option>
+                    <option>Romance</option>
+                    <option>Sci-Fi</option>
+                    <option>Thriller</option>
+                </select>
+                </div>
+                <div class="row">
+                <label for="minYear">Min Year</label>
+                <input id="minYear" type="number" min="1900" max="2100" step="1" placeholder="e.g., 2020" required>
+                </div>
+                <button id="movieResultsBtn" type="submit">Search Movies</button>
+            </form>
+            <section id="movieResults" class="results grid"></section>
+        </section>
 
-        <div class="results">
-            
-        </div>
+        <div class="results"></div>
         <div class="homepage">
             <a href="/index.html">
                 <button id="homepage">Return to Homepage</button>

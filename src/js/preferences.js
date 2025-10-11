@@ -1,6 +1,7 @@
 import { getUberEats, HttpError } from "./restaurant.js";
 
 const $ = (s) => document.querySelector(s);
+
 const form = $("#foodForm");
 const resultsEl = $("#results");
 const btn = $("#resultsBtn");
@@ -20,9 +21,11 @@ function render(items = []) {
     return;
   }
   const cards = items.slice(0, 5).map(it => {
-    const name = it?.name || "Unnamed item";
+    const name = it?.name || it?.title || "Unnamed item";
     const price = it?.price ? ` · ${it.price}` : "";
-    const img = it?.imageUrl ? `<img src="${it.imageUrl}" alt="" onerror="this.style.display='none'">` : "";
+    const imgSrc =
+      it?.imageUrl || it?.image || it?.img || it?.thumbnail || it?.photoUrl || null;
+    const img = imgSrc ? `<img src="${imgSrc}" alt="" onerror="this.style.display='none'">` : "";
     return `
       <article class="card">
         ${img}
@@ -44,9 +47,7 @@ function readCache(zip, cat) {
 }
 
 function friendly(err) {
-  // Dev details to console
   console.error('Search error:', err);
-
   if (err.name === 'AbortError') return 'Search was canceled.';
   if (err instanceof HttpError) {
     const s = err.status;
@@ -89,7 +90,6 @@ async function handleSubmit(e) {
 
   btn && (btn.disabled = true);
 
-  // If we have something cached for this exact query, show it immediately as a placeholder
   const cached = readCache(zip, category);
   if (cached?.items?.length) {
     setResults(`<p class="muted">Showing saved results from earlier while we fetch fresh data…</p>`);
@@ -98,7 +98,6 @@ async function handleSubmit(e) {
     setResults(`<p>Searching for <strong>${category}</strong> near ${zip}…</p>`);
   }
 
-  // Make this request cancel previous ones
   currentController?.abort();
   currentController = new AbortController();
 
@@ -112,6 +111,7 @@ async function handleSubmit(e) {
     const items = Array.isArray(data) ? data
                 : Array.isArray(data?.data) ? data.data
                 : Array.isArray(data?.results) ? data.results
+                : Array.isArray(data?.items) ? data.items
                 : [];
 
     clearProgress();
@@ -131,6 +131,139 @@ async function handleSubmit(e) {
   }
 }
 
+const movieForm = $("#movieForm");
+const movieResultsEl = $("#movieResults");
+const movieBtn = $("#movieResultsBtn");
+const genreSel = $("#movieGenre");
+const yearInput = $("#minYear");
+
+let movieController = null;
+const movieProgressTimers = [];
+
+function setMovieResults(html) {
+  if (movieResultsEl) movieResultsEl.innerHTML = html;
+}
+
+function pickMovieImage(it) {
+  const cands = [
+    it?.posterUrl, it?.posterURL, it?.poster_url, it?.poster,
+    it?.imageUrl, it?.image, it?.img, it?.thumbnail, it?.Poster
+  ].filter(Boolean);
+  for (const c of cands) {
+    if (typeof c === 'string' && /^https?:\/\//i.test(c)) return c;
+  }
+  if (typeof it?.poster_path === 'string' && it.poster_path.startsWith('/')) {
+    return `https://image.tmdb.org/t/p/w342${it.poster_path}`;
+  }
+  return null;
+}
+
+function renderMovies(items = []) {
+  if (!items?.length) {
+    setMovieResults(`<p>No movies found. Try another genre or year.</p>`);
+    return;
+  }
+  const cards = items.slice(0, 5).map(it => {
+    const title = it?.Title || it?.title || it?.name || it?.original_title || "Untitled";
+    const year = it?.Year || it?.year || (it?.release_date ? new Date(it.release_date).getFullYear() : "");
+    const rating = it?.Rating || it?.rating || it?.vote_average;
+    const poster = pickMovieImage(it);
+    const img = poster ? `<img src="${poster}" alt="" onerror="this.style.display='none'">` : "";
+    const meta = [year ? `(${year})` : "", rating ? `⭐ ${rating}` : ""].filter(Boolean).join(" ");
+    return `
+      <article class="card">
+        ${img}
+        <h3>${title}</h3>
+        <p>${meta}</p>
+      </article>
+    `;
+  }).join("");
+  setMovieResults(`<div class="grid">${cards}</div>`);
+}
+
+const moviesCacheKey = (minYear, genre) => `ddc:movies:${minYear}:${genre}`;
+function saveMoviesCache(minYear, genre, items) {
+  localStorage.setItem(moviesCacheKey(minYear, genre), JSON.stringify({ ts: Date.now(), items }));
+}
+function readMoviesCache(minYear, genre) {
+  try { return JSON.parse(localStorage.getItem(moviesCacheKey(minYear, genre))); }
+  catch { return null; }
+}
+
+function clearMovieProgress() { movieProgressTimers.splice(0).forEach(clearTimeout); }
+function scheduleMovieProgress(minYear, genre) {
+  clearMovieProgress();
+  movieProgressTimers.push(setTimeout(() => {
+    setMovieResults(`<p>Searching for <strong>${genre}</strong> movies since <strong>${minYear}</strong>…</p>`);
+  }, 0));
+  movieProgressTimers.push(setTimeout(() => {
+    setMovieResults(`<p>Still looking… the movie provider can be slow during peak times.</p>`);
+  }, 8000));
+  movieProgressTimers.push(setTimeout(() => {
+    setMovieResults(`<p>Almost there… thanks for your patience.</p>`);
+  }, 20000));
+}
+
+async function handleMovieSubmit(e) {
+  e.preventDefault();
+
+  const genre = genreSel?.value?.trim();
+  const minYear = yearInput?.value?.trim();
+
+  if (!genre || !/^\d{4}$/.test(minYear || '')) {
+    setMovieResults(`<p>Please pick a genre and enter a 4-digit minimum year (e.g., 2020).</p>`);
+    return;
+  }
+
+  movieBtn && (movieBtn.disabled = true);
+
+  const cached = readMoviesCache(minYear, genre);
+  if (cached?.items?.length) {
+    setMovieResults(`<p class="muted">Showing saved results from earlier while we fetch fresh data…</p>`);
+    renderMovies(cached.items);
+  } else {
+    setMovieResults(`<p>Searching for <strong>${genre}</strong> movies since <strong>${minYear}</strong>…</p>`);
+  }
+
+  movieController?.abort();
+  movieController = new AbortController();
+  scheduleMovieProgress(minYear, genre);
+
+  try {
+    // OPTION A: Call Netlify function (enforces Limit=5 server-side)
+    const url = `/.netlify/functions/moviesSearch?${new URLSearchParams({ MinYear: minYear, Genre: genre })}`;
+    const r = await fetch(url, { signal: movieController.signal, headers: { accept: 'application/json' } });
+    if (!r.ok) throw new HttpError(r.status, r.statusText);
+    const data = await r.json();
+
+    // OPTION B: If you prefer to go through movies.js wrapper:
+    // const data = await getMoviesByFilter({ MinYear: minYear, Genre: genre }, { signal: movieController.signal });
+
+    const items = Array.isArray(data) ? data
+                : Array.isArray(data?.items) ? data.items
+                : Array.isArray(data?.results) ? data.results
+                : Array.isArray(data?.data) ? data.data
+                : [];
+
+    clearMovieProgress();
+    renderMovies(items);
+    saveMoviesCache(minYear, genre, items);
+  } catch (err) {
+    clearMovieProgress();
+    const msg = friendly(err);
+    if (cached?.items?.length) {
+      setMovieResults(`<p>${msg} — showing saved results from earlier.</p>`);
+      renderMovies(cached.items);
+    } else {
+      setMovieResults(`<p>${msg}</p>`);
+    }
+  } finally {
+    movieBtn && (movieBtn.disabled = false);
+  }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
   form?.addEventListener("submit", handleSubmit);
+  movieForm?.addEventListener("submit", handleMovieSubmit);
 });
