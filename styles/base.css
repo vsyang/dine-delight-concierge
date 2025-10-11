@@ -43,6 +43,35 @@ main h1 {
     margin: 30px 0;
 }
 
+.card {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px 0;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+.card img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.card h3 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+}
+
+.card p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
 button {
     background: linear-gradient(90deg, #e9bfd4, #eb8cf8);
     width: 80%;
