@@ -29,7 +29,7 @@
                 
                 <div class="row">
                     <label>Category</label>
-                </div>
+                
                 <select id="foodCategory" name="category">
                     <option value="" disabled selected hidden>Select Category</option>
                     <option>Pizza</option>
@@ -44,17 +44,16 @@
                     <option>Desserts</option>
                     <option>Breakfast</option>
                 </select>
-                
+                </div>
                 <div class="row">
                     <label>Zip Code</label>
-                </div>
-                <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
                 
-                <button class="cta" type="submit" id="resultsBtn">Find Food</button>
-
+                <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
+                </div>
                 <section id="results" aria-live="polite">
                 </section>
-                
+                <button class="cta" type="submit" id="resultsBtn">Find Food</button>
+                                
             </form>
         </section>
 
