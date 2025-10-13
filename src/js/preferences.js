@@ -343,7 +343,7 @@ document.addEventListener("click", (e) => {
     }
 
     // Save updated favorites
-    localStorage.setItem(favoriteList, JSON.stringify(favorites));
+    localStorage.setItem(storageKey, JSON.stringify(favorites));
   }
 });
 
