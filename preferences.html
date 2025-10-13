@@ -7,7 +7,7 @@
     <meta name="author" content="Vanessa Yang">
     <meta name="description" content="Allow for users to pick preferences">
     <link rel="icon" href="/src/public/images/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="/src/styles/base.css">
+    <link rel="stylesheet" href="/styles/base.css">
     <script src="/src/js/preferences.js" type="module" defer ></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,47 +22,58 @@
     <main>
         <section class="intro">
             <h1>Welcome to Dine and Delight!</h1>
-            <div class="preference-form">
-                <p>Your food selection:</p>
+        </section>
+        <section class="preference-form">
+            <form id="foodForm">
+                <h2>First, something to eat:</h2>
                 
-                <section id="results" aria-live="polite" style="margin-top:1rem">
-                    <p class="muted">Pick a category and enter a ZIP to see results.</p>
+                <div class="row">
+                    <label>Category</label>
+                </div>
+                <select id="foodCategory" name="category">
+                    <option value="" disabled selected hidden>Select Category</option>
+                    <option>Pizza</option>
+                    <option>Burgers</option>
+                    <option>Sushi</option>
+                    <option>Tacos</option>
+                    <option>Thai</option>
+                    <option>Indian</option>
+                    <option>Chinese</option>
+                    <option>BBQ</option>
+                    <option>Vegan</option>
+                    <option>Desserts</option>
+                    <option>Breakfast</option>
+                </select>
+                
+                <div class="row">
+                    <label>Zip Code</label>
+                </div>
+                <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
+                
+                <button class="cta" type="submit" id="resultsBtn">Find Food</button>
+
+                <section id="results" aria-live="polite">
                 </section>
-                    
-                <form id="foodForm">
-                    <label>
-                    Category
-                    <select id="foodCategory" name="category">
-                        <option value="" disabled selected hidden>Select Category</option>
-                        <option>Pizza</option>
-                        <option>Burgers</option>
-                        <option>Sushi</option>
-                        <option>Tacos</option>
-                        <option>Thai</option>
-                        <option>Indian</option>
-                        <option>Chinese</option>
-                        <option>BBQ</option>
-                        <option>Vegan</option>
-                        <option>Desserts</option>
-                        <option>Breakfast</option>
-                    </select>
-                    </label>
-    
-                    <label>
-                    Zip Code
-                    <input id="zip" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" required>
-                    </label>
-              
-                    <button type="submit" id="resultsBtn">Find food</button>
-                </form>
-            </div>
+                
+            </form>
         </section>
 
+
         <section class="panel">
-            <h2>Find Movies</h2>
+            <h2>Next, what to watch:</h2>
             <form id="movieForm">
                 <div class="row">
-                <label for="movieGenre">Genre</label>
+                    <label for="movieType">Type</label>
+                </div>
+                <select id="movieType" required>
+                    <option value="">Choose…</option>
+                    <option>Movie</option>
+                    <option>TV Series</option>
+                </select>
+
+                <div class="row">
+                    <label for="movieGenre">Genre</label>
+                </div>
                 <select id="movieGenre" required>
                     <option value="">Choose…</option>
                     <option>Action</option>
@@ -75,20 +86,20 @@
                     <option>Sci-Fi</option>
                     <option>Thriller</option>
                 </select>
-                </div>
+                
                 <div class="row">
-                <label for="minYear">Min Year</label>
+                <label for="minYear">Min Year</label></div>
                 <input id="minYear" type="number" min="1900" max="2100" step="1" placeholder="e.g., 2020" required>
-                </div>
-                <button id="movieResultsBtn" type="submit">Search Movies</button>
+                
+                <div class="grid" id="movieResults"></div>
+                <button class="cta" id="movieResultsBtn" type="submit">Search Movies</button>
             </form>
-            <section id="movieResults" class="results grid"></section>
         </section>
-
         <div class="results"></div>
+
         <div class="homepage">
             <a href="/index.html">
-                <button id="homepage">Return to Homepage</button>
+                <button class="cta" id="homepage">Return to Homepage</button>
             </a>
         </div>
     </main>

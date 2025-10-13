@@ -11,7 +11,7 @@ function toArray(data) {
 
 function getYear(rec) {
   const cands = [
-    rec?.startYear,            
+    rec?.startYear,
     rec?.year, rec?.Year,
     rec?.releaseYear, rec?.ReleaseYear,
     rec?.release_date, rec?.ReleaseDate, rec?.date
@@ -37,17 +37,18 @@ export async function handler(event) {
 
     const qp = new URLSearchParams(event.queryStringParameters || {});
     const MinYear = qp.get("MinYear") || "2020";
-    const Genre   = qp.get("Genre")   || "Drama";
-    const Limit   = 5;
+    const Genre = qp.get("Genre") || "Drama";
+    const Type = qp.get("Type") || "movie";  // 👈 NEW
+    const Limit = 5;
 
-    // Pull a bigger pool, then trim by MinYear + Limit
     const rows = String(Math.min(Math.max(Limit * 10, 25), 100));
+
     const params = new URLSearchParams({
-      type: "movie",
+      type: Type,             // 👈 Accepts "movie" or "tvSeries"
       genre: Genre,
       rows,
       sortOrder: "DESC",
-      sortField: "startYear"   // <-- changed here
+      sortField: "startYear"
     });
 
     const url = `${BASE}?${params}`;
@@ -62,12 +63,11 @@ export async function handler(event) {
 
     const text = await r.text();
 
-    // Normalize “no results” to empty list
     if (!r.ok) {
       if (r.status === 404) {
         return {
           statusCode: 200,
-          headers: { "content-type": "application/json", "cache-control": "public, max-age=300" },
+          headers: { "content-type": "application/json" },
           body: JSON.stringify({ items: [] })
         };
       }
@@ -78,10 +78,10 @@ export async function handler(event) {
       };
     }
 
-    let data; try { data = JSON.parse(text); } catch { data = text; }
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
     const arr = toArray(data);
 
-    // Filter + local sort (desc by year) as a safety net
     const filtered = arr
       .filter(it => {
         const y = getYear(it);
@@ -89,7 +89,18 @@ export async function handler(event) {
       })
       .sort((a, b) => (getYear(b) || 0) - (getYear(a) || 0));
 
-    const items = filtered.slice(0, Limit);
+    const items = filtered.slice(0, Limit).map(it => ({
+      id: it.id || it.imdbID,
+      title: it.primaryTitle || it.originalTitle || it.Title || it.title,
+      year: getYear(it),
+      runtime: it.runtimeMinutes || it.RuntimeMinutes || it.runtime || null,
+      description: it.description || it.plot || it.overview || it.storyline || "",
+      imageUrl:
+        (it.primaryImage && it.primaryImage.url) ||
+        it.primaryImage ||
+        (it.thumbnails && it.thumbnails[0]?.url) ||
+        null,
+    }));
 
     return {
       statusCode: 200,

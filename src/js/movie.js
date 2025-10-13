@@ -54,7 +54,7 @@ async function getMoviesDirect({ MinYear, Genre, Limit = 5 }, { signal } = {}) {
 }
 
 /**
- * VIA Netlify function proxy (create /.netlify/functions/moviesFilter)
+ *  (create /.netlify/functions/moviesFilter)
  * @param {{ MinYear: number|string, Genre: string, Limit?: number }} params
  * @param {{ signal?: AbortSignal }} [opts]
  */
@@ -86,7 +86,3 @@ export async function getMoviesByFilter(params, { direct = MOVIES_DIRECT_DEFAULT
     ? getMoviesDirect(params, { signal })
     : getMoviesViaFunction(params, { signal });
 }
-
-// Example usage:
-// const data = await getMoviesByFilter({ MinYear: 2020, Genre: 'Action' }); // Limit defaults to 5
-// console.log(data);

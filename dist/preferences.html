@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/preferences-JNBpdp3b.js"></script>
+  <script type="module" crossorigin src="/assets/preferences-BJ9-rQdn.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/base-DQM_IlgI.js">
   <link rel="modulepreload" crossorigin href="/assets/restaurant-CdretbXj.js">
   <link rel="stylesheet" crossorigin href="/assets/base-DWu52g69.css">
@@ -25,15 +25,15 @@
         <section class="intro">
             <h1>Welcome to Dine and Delight!</h1>
             <div class="preference-form">
-                <p>Your food selection:</p>
-                
-                <section id="results" aria-live="polite" style="margin-top:1rem">
-                    <p class="muted">Pick a category and enter a ZIP to see results.</p>
-                </section>
-                    
                 <form id="foodForm">
-                    <label>
-                    Category
+                    <h2>First, something to eat:</h2>
+                    
+                    <section id="results" aria-live="polite">
+                        <p class="muted">Pick a category and enter a ZIP to see results.</p>
+                    </section>
+                    
+                    <label>Category
+                    
                     <select id="foodCategory" name="category">
                         <option value="" disabled selected hidden>Select Category</option>
                         <option>Pizza</option>
@@ -52,7 +52,7 @@
     
                     <label>
                     Zip Code
-                    <input id="zip" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" required>
+                    <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
                     </label>
               
                     <button type="submit" id="resultsBtn">Find food</button>
@@ -61,7 +61,7 @@
         </section>
 
         <section class="panel">
-            <h2>Find Movies</h2>
+            <h2>Next, what you feel like watching:</h2>
             <form id="movieForm">
                 <div class="row">
                 <label for="movieGenre">Genre</label>
@@ -82,9 +82,9 @@
                 <label for="minYear">Min Year</label>
                 <input id="minYear" type="number" min="1900" max="2100" step="1" placeholder="e.g., 2020" required>
                 </div>
+                <div class="grid" id="movieResults"></div>
                 <button id="movieResultsBtn" type="submit">Search Movies</button>
             </form>
-            <section id="movieResults" class="results grid"></section>
         </section>
 
         <div class="results"></div>
