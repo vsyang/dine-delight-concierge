@@ -38,13 +38,13 @@ export async function handler(event) {
     const qp = new URLSearchParams(event.queryStringParameters || {});
     const MinYear = qp.get("MinYear") || "2020";
     const Genre = qp.get("Genre") || "Drama";
-    const Type = qp.get("Type") || "movie";  // 👈 NEW
+    const Type = qp.get("Type") || "movie";  
     const Limit = 5;
 
     const rows = String(Math.min(Math.max(Limit * 10, 25), 100));
 
     const params = new URLSearchParams({
-      type: Type,             // 👈 Accepts "movie" or "tvSeries"
+      type: Type,             // Accepts "movie" or "tvSeries"
       genre: Genre,
       rows,
       sortOrder: "DESC",

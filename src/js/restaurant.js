@@ -3,7 +3,7 @@ export class HttpError extends Error {
     super(message || `HTTP ${status}`);
     this.name = 'HttpError';
     this.status = status;
-    this.payload = payload; // parsed JSON or raw text
+    this.payload = payload; 
   }
 }
 

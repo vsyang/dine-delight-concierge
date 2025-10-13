@@ -2,6 +2,7 @@ import { getUberEats, HttpError } from "./restaurant.js";
 
 const $ = (s) => document.querySelector(s);
 
+// ===== FOOD SEARCH =====
 const form = $("#foodForm");
 const resultsEl = $("#results");
 const btn = $("#resultsBtn");
@@ -20,20 +21,37 @@ function render(items = []) {
     setResults(`<p>No results found. Try another category or ZIP.</p>`);
     return;
   }
-  const cards = items.slice(0, 5).map(it => {
-    const name = it?.name || it?.title || "Unnamed item";
-    const price = it?.price ? ` · ${it.price}` : "";
-    const imgSrc =
-      it?.imageUrl || it?.image || it?.img || it?.thumbnail || it?.photoUrl || null;
-    const img = imgSrc ? `<img src="${imgSrc}" alt="" onerror="this.style.display='none'">` : "";
-    return `
-      <article class="card">
-        ${img}
-        <h3>${name}</h3>
-        <p>${price}</p>
-      </article>
-    `;
-  }).join("");
+
+  // Only show items that have an image
+  const cards = items
+    .filter(it => {
+      const imgSrc =
+        it?.imageUrl || it?.image || it?.img || it?.thumbnail || it?.photoUrl || null;
+      return !!imgSrc;
+    })
+    .slice(0, 5)
+    .map(it => {
+      const name = it?.name || it?.title || "Unnamed item";
+      const price = it?.price ? ` · ${it.price}` : "";
+      const imgSrc =
+        it?.imageUrl || it?.image || it?.img || it?.thumbnail || it?.photoUrl || null;
+
+      const img = `<img src="${imgSrc}" alt="Image of ${name}" onerror="this.style.display='none'">`;
+
+      return `
+        <article class="card" data-type="movie" data-title="${title}">
+          <button class="heart-btn" aria-label="Add to favorites" data-type="movie">♡</button>
+          ${img}
+          <div class="card-content">
+            <h3>${title}</h3>
+            <p class="meta">${meta}</p>
+            ${description ? `<p class="desc">${description}</p>` : ""}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
   setResults(`<div class="grid">${cards}</div>`);
 }
 
@@ -47,20 +65,20 @@ function readCache(zip, cat) {
 }
 
 function friendly(err) {
-  console.error('Search error:', err);
-  if (err.name === 'AbortError') return 'Search was canceled.';
+  console.error("Search error:", err);
+  if (err.name === "AbortError") return "Search was canceled.";
   if (err instanceof HttpError) {
     const s = err.status;
-    if (s === 401 || s === 403) return 'Authorization problem with the search service. Please try again shortly.';
-    if (s === 404) return 'The search service endpoint was not found.';
-    if (s === 400 || s === 422) return 'Please pick a category and enter a valid 5-digit ZIP.';
-    if (s === 429) return 'We’re searching a bit too fast. Wait a minute and try again.';
-    if (s >= 500 && s <= 504) return 'The food search service had a hiccup. Try again in a moment.';
+    if (s === 401 || s === 403) return "Authorization problem with the search service.";
+    if (s === 404) return "The search service endpoint was not found.";
+    if (s === 400 || s === 422) return "Please pick a category and enter a valid 5-digit ZIP.";
+    if (s === 429) return "Too many searches. Wait a minute and try again.";
+    if (s >= 500 && s <= 504) return "The food search service had a hiccup. Try again soon.";
     return `Unexpected error (code ${s}).`;
   }
-  if (/NetworkError|Failed to fetch/i.test(err.message)) return 'Network error — please check your connection.';
-  if (/Missing VITE_RAPIDAPI_KEY/i.test(err.message)) return 'Setup issue: missing API key (dev-only).';
-  return 'Something went wrong. Please try again.';
+  if (/NetworkError|Failed to fetch/i.test(err.message)) return "Network error — check your connection.";
+  if (/Missing VITE_RAPIDAPI_KEY/i.test(err.message)) return "Missing API key (dev-only).";
+  return "Something went wrong. Please try again.";
 }
 
 function clearProgress() { progressTimers.splice(0).forEach(clearTimeout); }
@@ -79,11 +97,10 @@ function scheduleProgress(zip, cat) {
 
 async function handleSubmit(e) {
   e.preventDefault();
-
   const category = categorySel?.value?.trim();
   const zip = zipInput?.value?.trim();
 
-  if (!category || !/^\d{5}$/.test(zip || '')) {
+  if (!category || !/^\d{5}$/.test(zip || "")) {
     setResults(`<p>Please pick a category and enter a valid 5-digit ZIP.</p>`);
     return;
   }
@@ -92,7 +109,7 @@ async function handleSubmit(e) {
 
   const cached = readCache(zip, category);
   if (cached?.items?.length) {
-    setResults(`<p class="muted">Showing saved results from earlier while we fetch fresh data…</p>`);
+    setResults(`<p class="muted">Showing saved results while fetching fresh data…</p>`);
     render(cached.items);
   } else {
     setResults(`<p>Searching for <strong>${category}</strong> near ${zip}…</p>`);
@@ -100,7 +117,6 @@ async function handleSubmit(e) {
 
   currentController?.abort();
   currentController = new AbortController();
-
   scheduleProgress(zip, category);
 
   try {
@@ -108,11 +124,15 @@ async function handleSubmit(e) {
       { address: zip, resName: category },
       { signal: currentController.signal }
     );
-    const items = Array.isArray(data) ? data
-                : Array.isArray(data?.data) ? data.data
-                : Array.isArray(data?.results) ? data.results
-                : Array.isArray(data?.items) ? data.items
-                : [];
+    const items = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(data?.items)
+      ? data.items
+      : [];
 
     clearProgress();
     render(items);
@@ -131,6 +151,7 @@ async function handleSubmit(e) {
   }
 }
 
+// ===== MOVIE SEARCH =====
 const movieForm = $("#movieForm");
 const movieResultsEl = $("#movieResults");
 const movieBtn = $("#movieResultsBtn");
@@ -146,14 +167,12 @@ function setMovieResults(html) {
 
 function pickMovieImage(it) {
   const cands = [
-    // IMDb236
-    it?.primaryImage?.url,        // sometimes object with url
-    typeof it?.primaryImage === 'string' ? it.primaryImage : null,
+    it?.primaryImage?.url,
+    typeof it?.primaryImage === "string" ? it.primaryImage : null,
     ...(Array.isArray(it?.thumbnails) ? it.thumbnails.map(t => t?.url) : []),
-    // other APIs fallbacks
     it?.posterUrl, it?.Poster, it?.poster, it?.imageUrl, it?.image, it?.img, it?.thumbnail
   ].filter(Boolean);
-  return cands.find(u => typeof u === 'string' && /^https?:\/\//i.test(u)) || null;
+  return cands.find(u => typeof u === "string" && /^https?:\/\//i.test(u)) || null;
 }
 
 function renderMovies(items = []) {
@@ -161,31 +180,51 @@ function renderMovies(items = []) {
     setMovieResults(`<p>No movies found. Try another genre or year.</p>`);
     return;
   }
-  const cards = items.slice(0, 5).map(it => {
-    const title =
-      it?.primaryTitle || it?.originalTitle || // IMDb236
-      it?.Title || it?.title || it?.name || it?.original_title ||
-      it?.titleText?.text || "Untitled";
 
-    const year = it?.startYear || it?.Year || it?.year ||
-                 (it?.release_date ? new Date(it.release_date).getFullYear() : "");
+  // Only show movies that have a poster image
+  const cards = items
+    .filter(it => !!pickMovieImage(it))
+    .slice(0, 5)
+    .map(it => {
+      const title =
+        it?.primaryTitle || it?.originalTitle ||
+        it?.Title || it?.title || it?.name || it?.original_title ||
+        it?.titleText?.text || "Untitled";
 
-    const rating = it?.Rating || it?.rating || it?.vote_average;
-    const poster = pickMovieImage(it);
-    const img = poster ? `<img src="${poster}" alt="" onerror="this.style.display='none'">` : "";
-    const meta = [year ? `(${year})` : "", rating ? `⭐ ${rating}` : ""].filter(Boolean).join(" ");
+      const year =
+        it?.startYear || it?.Year || it?.year ||
+        (it?.release_date ? new Date(it.release_date).getFullYear() : "");
 
-    return `
-      <article class="card">
-        ${img}
-        <h3>${title}</h3>
-        <p>${meta}</p>
-      </article>
-    `;
-  }).join("");
+      const rating = it?.Rating || it?.rating || it?.vote_average;
+      const description = it?.description || it?.plot || it?.synopsis || "";
+      const runtime = it?.runtimeMinutes || it?.RuntimeMinutes || it?.runtime || "";
+
+      const poster = pickMovieImage(it);
+      const img = `<img src="${poster}" alt="Poster of ${title}" title="${title}" onerror="this.style.display='none'">`;
+
+      const meta = [
+        year ? `(${year})` : "",
+        rating ? `⭐ ${rating}` : "",
+        runtime ? `⏱️ ${runtime} min` : ""
+      ].filter(Boolean).join(" ");
+
+      return `
+        <article class="card" data-type="movie" data-title="${title}">
+          <button class="heart-btn" aria-label="Add to favorites" data-type="movie">♡</button>
+          ${img}
+          <div class="card-content">
+            <h3>${title}</h3>
+            <p class="meta">${meta}</p>
+            ${description ? `<p class="desc">${description}</p>` : ""}
+          </div>
+        </article>
+      `;
+
+    })
+    .join("");
+
   setMovieResults(`<div class="grid">${cards}</div>`);
 }
-
 
 const moviesCacheKey = (minYear, genre) => `ddc:movies:${minYear}:${genre}`;
 function saveMoviesCache(minYear, genre, items) {
@@ -216,7 +255,7 @@ async function handleMovieSubmit(e) {
   const genre = genreSel?.value?.trim();
   const minYear = yearInput?.value?.trim();
 
-  if (!genre || !/^\d{4}$/.test(minYear || '')) {
+  if (!genre || !/^\d{4}$/.test(minYear || "")) {
     setMovieResults(`<p>Please pick a genre and enter a 4-digit minimum year (e.g., 2020).</p>`);
     return;
   }
@@ -225,7 +264,7 @@ async function handleMovieSubmit(e) {
 
   const cached = readMoviesCache(minYear, genre);
   if (cached?.items?.length) {
-    setMovieResults(`<p class="muted">Showing saved results from earlier while we fetch fresh data…</p>`);
+    setMovieResults(`<p class="muted">Showing saved results while fetching fresh data…</p>`);
     renderMovies(cached.items);
   } else {
     setMovieResults(`<p>Searching for <strong>${genre}</strong> movies since <strong>${minYear}</strong>…</p>`);
@@ -236,20 +275,20 @@ async function handleMovieSubmit(e) {
   scheduleMovieProgress(minYear, genre);
 
   try {
-    // OPTION A: Call Netlify function (enforces Limit=5 server-side)
     const url = `/.netlify/functions/moviesSearch?${new URLSearchParams({ MinYear: minYear, Genre: genre })}`;
-    const r = await fetch(url, { signal: movieController.signal, headers: { accept: 'application/json' } });
+    const r = await fetch(url, { signal: movieController.signal, headers: { accept: "application/json" } });
     if (!r.ok) throw new HttpError(r.status, r.statusText);
     const data = await r.json();
 
-    // OPTION B: If you prefer to go through movies.js wrapper:
-    // const data = await getMoviesByFilter({ MinYear: minYear, Genre: genre }, { signal: movieController.signal });
-
-    const items = Array.isArray(data) ? data
-                : Array.isArray(data?.items) ? data.items
-                : Array.isArray(data?.results) ? data.results
-                : Array.isArray(data?.data) ? data.data
-                : [];
+    const items = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data?.results)
+      ? data.results
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
 
     clearMovieProgress();
     renderMovies(items);
@@ -268,8 +307,43 @@ async function handleMovieSubmit(e) {
   }
 }
 
-
+// ===== EVENT LISTENERS =====
 document.addEventListener("DOMContentLoaded", () => {
   form?.addEventListener("submit", handleSubmit);
   movieForm?.addEventListener("submit", handleMovieSubmit);
 });
+
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("heart-btn")) {
+    const btn = e.target;
+    const card = btn.closest(".card");
+    const type = card.dataset.type; // 'food' or 'movie'
+
+    const name = type === "movie" ? card.dataset.title : card.dataset.name;
+    const image = card.querySelector("img")?.src || "";
+    const description = card.querySelector(".desc")?.textContent || "";
+    const storageKey = "favoriteList";
+
+    // Get existing favorites
+    const favorites = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    // Check if this item already exists
+    const index = favorites.findIndex(
+      (f) => f.name === name && f.type === type
+    );
+
+    if (index === -1) {
+      // Add new favorite ❤️
+      favorites.push({ type, name, image, description });
+      btn.textContent = "❤️";
+    } else {
+      // Remove existing favorite ♡
+      favorites.splice(index, 1);
+      btn.textContent = "♡";
+    }
+
+    // Save updated favorites
+    localStorage.setItem(favoriteList, JSON.stringify(favorites));
+  }
+});
+
