@@ -64,7 +64,7 @@ async function getMoviesViaFunction({ MinYear, Genre, Limit = 5 }, { signal } = 
   if (Genre) qs.set('Genre', Genre);
   qs.set('Limit', String(Limit ?? 5));
 
-  const resp = await fetch(`/.netlify/functions/moviesFilter?${qs}`, {
+  const resp = await fetch(`/.netlify/functions/moviesSearch?${qs}`, {
     signal,
     headers: { accept: 'application/json' }
   });
