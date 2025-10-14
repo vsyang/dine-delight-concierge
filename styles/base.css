@@ -50,8 +50,8 @@ h2 {
 .card {
     border: 1px solid #eee;
     border-radius: 12px;
-    padding: 12px;
-    margin: 8px 0;
+    padding: 24px;
+    margin: 10px 0;
     display: grid;
     grid-template-columns: 72px 1fr;
     gap: 12px;
@@ -73,26 +73,43 @@ h2 {
 
 .card p {
     margin: 0;
-    color: #666;
+    color: #fdf0d5;
     font-size: 0.9rem;
+    width: 80%;
 }
 
-.heart-btn {
-    position: relative;
-    top: 5%;
+.card .heart-btn {
+    position: absolute;
+    top: 8px;
     right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.8rem;
-    color: #ccc;
-    cursor: pointer;
-    transition: transform 0.2s ease, color 0.2s ease;
-    z-index: 50;
+
+    background: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    font-size: 22px;
+    color: #cbd5e1;
+    border-radius: 999px;
+    z-index: 20;
+
+    transform-origin: center;
+    transition: opacity .15s ease, transform .15s ease, color .15s ease;
 }
 
-.heart-btn:hover {
-    transform: scale(1.2);
+.card .heart-btn:hover {
+    transform: scale(1.08);
     color: #ff7aa5;
+}
+
+.card .heart-btn.is-fav {
+
+    color: #e63946;
 }
 
 button {
@@ -178,7 +195,7 @@ select, input {
         border: #0f172a solid 2px;
         border-radius: 12px;
         margin: 10px;
-        padding: 10px;
+        padding: 15px;
     }
 
     .panel {

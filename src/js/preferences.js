@@ -324,25 +324,20 @@ document.addEventListener("click", (e) => {
     const description = card.querySelector(".desc")?.textContent || "";
     const storageKey = "favoriteList";
 
-    // Get existing favorites
     const favorites = JSON.parse(localStorage.getItem(storageKey)) || [];
 
-    // Check if this item already exists
     const index = favorites.findIndex(
       (f) => f.name === name && f.type === type
     );
 
     if (index === -1) {
-      // Add new favorite ❤️
       favorites.push({ type, name, image, description });
       btn.textContent = "❤️";
     } else {
-      // Remove existing favorite ♡
       favorites.splice(index, 1);
       btn.textContent = "♡";
     }
 
-    // Save updated favorites
     localStorage.setItem(storageKey, JSON.stringify(favorites));
   }
 });
