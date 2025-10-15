@@ -29,26 +29,42 @@
                 
                 <div class="row">
                     <label>Category</label>
-                
-                <select id="foodCategory" name="category">
-                    <option value="" disabled selected hidden>Select Category</option>
-                    <option>Pizza</option>
-                    <option>Burgers</option>
-                    <option>Sushi</option>
-                    <option>Tacos</option>
-                    <option>Thai</option>
-                    <option>Indian</option>
-                    <option>Chinese</option>
-                    <option>BBQ</option>
-                    <option>Vegan</option>
-                    <option>Desserts</option>
-                    <option>Breakfast</option>
-                </select>
+
+                    <select id="foodCategory" name="category">
+                        <option value="" disabled selected hidden>Select Category</option>
+                        <option>Pizza</option>
+                        <option>Burgers</option>
+                        <option>Sushi</option>
+                        <option>Tacos</option>
+                        <option>Thai</option>
+                        <option>Indian</option>
+                        <option>Chinese</option>
+                        <option>BBQ</option>
+                        <option>Vegan</option>
+                        <option>Desserts</option>
+                        <option>Breakfast</option>
+                    </select>
                 </div>
+
                 <div class="row">
                     <label>Zip Code</label>
+                    
+                    <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
+                </div>
                 
-                <input id="zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]*" placeholder="80202" autocomplete="postal-code" required>
+                <div class="row">
+                    <label>Price Range</label>
+                    
+                    <select id="price-range" name="price">
+                    <option value="" disabled selected hidden>Select Price</option>
+                    <option>$1.00 - $4.99</option>
+                    <option>$5.00 - $9.99</option>
+                    <option>$10.00 - $14.99</option>
+                    <option>$15.00 - $19.99</option>
+                    <option>$20.00 - $24.99</option>
+                    <option>$25.00 - $29.99</option>
+                    <option>$30 or more></option>
+                </select>
                 </div>
                 <section id="results" aria-live="polite">
                 </section>
@@ -87,19 +103,17 @@
                 </select>
                 
                 <div class="row">
-                <label for="minYear">Min Year</label></div>
+                <label for="minYear">Year</label></div>
                 <input id="minYear" type="number" min="1900" max="2100" step="1" placeholder="e.g., 2020" required>
                 
-                <div class="grid" id="movieResults"></div>
+                <div id="movieResults"></div>
                 <button class="cta" id="movieResultsBtn" type="submit">Search Movies</button>
             </form>
         </section>
         <div class="results"></div>
 
         <div class="homepage">
-            <a href="/index.html">
-                <button class="cta" id="homepage">Return to Homepage</button>
-            </a>
+            <button class="cta" id="homepage" onclick="window.location.href='index.html'" title="homepage">Return to Homepage</button>
         </div>
     </main>
 

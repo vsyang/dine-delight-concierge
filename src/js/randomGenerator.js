@@ -26,7 +26,7 @@ function normalizeRestaurant(it = {}) {
     name: it.name || it.title || "Unnamed restaurant",
     category: it.category || it.cuisine || "",
     description: it.description || it.desc || "",
-    image: hasHttpImage(image) ? image : "", // only accept http(s)
+    image: hasHttpImage(image) ? image : "", 
   };
 }
 
@@ -65,14 +65,14 @@ function pickWithImage(list, normalize) {
   if (!Array.isArray(list) || list.length === 0) {
     throw new Error("No items available to pick from.");
   }
-  // start from a random index; loop once through the array
+    
   const start = Math.floor(Math.random() * list.length);
   for (let k = 0; k < list.length; k++) {
     const idx = (start + k) % list.length;
     const norm = normalize(list[idx] ?? {});
-    if (hasHttpImage(norm.image)) return norm; // first with a good image
+    if (hasHttpImage(norm.image)) return norm; 
   }
-  // none had images → return a random normalized one (placeholder will show)
+
   return normalize(list[start]);
 }
 
@@ -98,8 +98,8 @@ async function fetchWithFallback(callFn, { preferDirect = false, signal, triesPe
       } catch (err) {
         log(`error in mode=${direct ? "direct" : "function"} attempt=${attempt + 1}`, err);
         attempt++;
-        if (!direct && err?.status === 404) break;                         // function missing
-        if (direct && (err?.status === 401 || err?.status === 403)) break; // key/forbidden
+        if (!direct && err?.status === 404) break;                        
+        if (direct && (err?.status === 401 || err?.status === 403)) break; 
         if (attempt < triesPerMode && isRetryable(err)) {
           await sleep(backoffMs * attempt);
           continue;
@@ -115,7 +115,7 @@ async function fetchWithFallback(callFn, { preferDirect = false, signal, triesPe
 export async function selectOneFood(opts = {}) {
   const {
     params = { address: "19122", resName: "sushi", limit: 30 },
-    // while your function returns 500s, prefer direct; flip to false when fixed
+    // while function returns 500s, prefer direct; flip to false when fixed
     preferDirect = true,
     signal,
   } = opts;
@@ -134,7 +134,7 @@ export async function selectOneMovie(opts = {}) {
     Genre = "Action",
     MinYear = 2020,
     Limit = 30,
-    preferDirect = false, // your moviesSearch function works; try it first
+    preferDirect = false, 
     signal,
   } = opts;
 

@@ -1,88 +1,148 @@
-export class HttpError extends Error {
-  constructor(status, message, payload) {
-    super(message || `HTTP ${status}`);
-    this.name = 'HttpError';
-    this.status = status;
-    this.payload = payload;
+const HOST = "imdb236.p.rapidapi.com";
+const BASE = `https://${HOST}/api/imdb/search`;
+
+function toArray(data) {
+  return Array.isArray(data) ? data
+       : Array.isArray(data?.items) ? data.items
+       : Array.isArray(data?.results) ? data.results
+       : Array.isArray(data?.data) ? data.data
+       : [];
+}
+
+function getYear(rec) {
+  const cands = [
+    rec?.startYear,
+    rec?.year, rec?.Year,
+    rec?.releaseYear, rec?.ReleaseYear,
+    rec?.release_date, rec?.ReleaseDate, rec?.date
+  ];
+  for (const c of cands) {
+    if (!c) continue;
+    if (typeof c === "number") return c;
+    const s = String(c);
+    const m = s.match(/\b(19|20)\d{2}\b/);
+    if (m) return Number(m[0]);
+    const d = new Date(s);
+    if (!isNaN(d)) return d.getFullYear();
   }
+  return undefined;
 }
 
-async function parseMaybeJSON(resp) {
-  const text = await resp.text();
-  try { return { data: JSON.parse(text), raw: text }; }
-  catch { return { data: null, raw: text }; }
+function uniqId(it) {
+  return it?.id || it?.imdbID || it?.tconst || it?.const || `${it?.title ?? ""}-${getYear(it) ?? ""}`;
 }
 
-async function ensureOk(resp) {
-  if (!resp.ok) {
-    const { data, raw } = await parseMaybeJSON(resp);
-    const msg = data?.message || data?.msg || data?.error || resp.statusText;
-    throw new HttpError(resp.status, msg, data ?? raw);
+// Fisher–Yates
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-  return resp.json();
+  return arr;
 }
 
-const MOVIES_DIRECT_DEFAULT = import.meta.env.VITE_MOVIES_DIRECT === 'true';
-const RAPID_KEY = import.meta.env.VITE_RAPIDAPI_KEY;
-const MOVIES_HOST = 'imbd236.p.rapidapi.com';
-const MOVIES_URL = `https://${MOVIES_HOST}/Filter`;
+async function fetchPage({ key, Genre, Type, Rows, page }) {
+  const params = new URLSearchParams({
+    type: Type,
+    genre: Genre,
+    rows: String(Rows),
+    sortOrder: "DESC",
+    sortField: "startYear",
+    page: String(page)            // <- many RapidAPI search endpoints support page
+  });
 
-/**
- * DIRECT call to RapidAPI
- * @param {{ MinYear: number|string, Genre: string, Limit?: number }} params
- * @param {{ signal?: AbortSignal }} [opts]
- */
-async function getMoviesDirect({ MinYear, Genre, Limit = 5 }, { signal } = {}) {
-  if (!RAPID_KEY) throw new Error('Missing VITE_RAPIDAPI_KEY');
-
-  const qs = new URLSearchParams();
-  if (MinYear != null) qs.set('MinYear', String(MinYear));
-  if (Genre) qs.set('Genre', Genre);
-  qs.set('Limit', String(Limit ?? 5));
-
-  const resp = await fetch(`${MOVIES_URL}?${qs}`, {
-    method: 'GET',
-    signal,
+  const url = `${BASE}?${params}`;
+  const r = await fetch(url, {
+    method: "GET",
     headers: {
-      'X-RapidAPI-Key': RAPID_KEY,
-      'X-RapidAPI-Host': MOVIES_HOST,
-      'accept': 'application/json'
+      "x-rapidapi-key": key,
+      "x-rapidapi-host": HOST,
+      "accept": "application/json"
     }
   });
 
-  return ensureOk(resp);
+  const text = await r.text();
+  if (!r.ok) {
+    if (r.status === 404) return [];
+    throw new Error(`Upstream error ${r.status}: ${text?.slice?.(0, 300)}`);
+  }
+
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  const arr = toArray(data);
+
+  // sort newest -> oldest within page to be consistent
+  arr.sort((a, b) => (getYear(b) || 0) - (getYear(a) || 0));
+  return arr;
 }
 
-/**
- *  (create /.netlify/functions/moviesFilter)
- * @param {{ MinYear: number|string, Genre: string, Limit?: number }} params
- * @param {{ signal?: AbortSignal }} [opts]
- */
-async function getMoviesViaFunction({ MinYear, Genre, Limit = 5 }, { signal } = {}) {
-  const qs = new URLSearchParams();
-  if (MinYear != null) qs.set('MinYear', String(MinYear));
-  if (Genre) qs.set('Genre', Genre);
-  qs.set('Limit', String(Limit ?? 5));
+export async function handler(event) {
+  try {
+    const key = process.env.RAPIDAPI_KEY;
+    if (!key) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
+    }
 
-  const resp = await fetch(`/.netlify/functions/moviesSearch?${qs}`, {
-    signal,
-    headers: { accept: 'application/json' }
-  });
+    const qp = new URLSearchParams(event.queryStringParameters || {});
+    const nowYear = new Date().getFullYear();
+    const MinYear = Number(qp.get("MinYear") || "2020");
+    const MaxYear = Number(qp.get("MaxYear") || String(nowYear));
+    const Genre   = qp.get("Genres") || "Drama";
+    const Type    = qp.get("Type") || "movie";
+    const Limit   = Math.max(1, Number(qp.get("Limit") || 5));
 
-  return ensureOk(resp);
-}
+    // paging knobs
+    const Rows      = Math.min(100, Math.max(25, Number(qp.get("Rows") || 100)));
+    const PageLimit = Math.min(10, Math.max(1, Number(qp.get("PageLimit") || 5)));
 
-/**
- * Public API
- * @param {{ MinYear: number|string, Genre: string, Limit?: number }} params
- * @param {{ direct?: boolean, signal?: AbortSignal }} [opts]
- */
-export async function getMoviesByFilter(params, { direct = MOVIES_DIRECT_DEFAULT, signal } = {}) {
-  // minimal guardrails
-  if (!params || !params.Genre) throw new Error('Genre is required');
-  if (params.MinYear == null) throw new Error('MinYear is required');
+    const seen = new Set();
+    const pooled = [];
 
-  return direct
-    ? getMoviesDirect(params, { signal })
-    : getMoviesViaFunction(params, { signal });
+    for (let page = 1; page <= PageLimit; page++) {
+      const pageItems = await fetchPage({ key, Genre, Type, Rows, page });
+
+      for (const it of pageItems) {
+        const id = uniqId(it);
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        pooled.push(it);
+      }
+
+      // cheap short-circuit: if we already have far more than we need pre-filter, stop early
+      if (pooled.length >= Limit * 20) break;
+    }
+
+    // filter by year bounds
+    const inWindow = pooled.filter((it) => {
+      const y = getYear(it);
+      return Number.isFinite(y) ? (y >= MinYear && y <= MaxYear) : false;
+    });
+
+    // diversify a bit so the same head rows don’t always dominate
+    shuffleInPlace(inWindow);
+
+    const items = inWindow.slice(0, Limit).map(it => ({
+      id: it.id || it.imdbID,
+      title: it.primaryTitle || it.originalTitle || it.Title || it.title,
+      year: getYear(it),
+      runtime: it.runtimeMinutes || it.RuntimeMinutes || it.runtime || null,
+      description: it.description || it.plot || it.overview || it.storyline || "",
+      imageUrl:
+        (it.primaryImage && it.primaryImage.url) ||
+        it.primaryImage ||
+        (it.thumbnails && it.thumbnails[0]?.url) ||
+        null,
+    }));
+
+    return {
+      statusCode: 200,
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=300"
+      },
+      body: JSON.stringify({ items, meta: { pooled: pooled.length, inWindow: inWindow.length } })
+    };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
 }

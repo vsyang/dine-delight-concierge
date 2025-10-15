@@ -51,12 +51,13 @@ h2 {
     border: 1px solid #eee;
     border-radius: 12px;
     padding: 24px;
-    margin: 10px 0;
+    margin: 20px;
     display: grid;
     grid-template-columns: 72px 1fr;
     gap: 12px;
     align-items: start;
     position: relative;
+    height: 100%;
 }
 
 .card img {
@@ -108,22 +109,13 @@ h2 {
 }
 
 .card .heart-btn.is-fav {
-
     color: #e63946;
-}
-
-button {
-    background: linear-gradient(90deg, #e9bfd4, #eb8cf8);
-    width: 350px;
-    height: 60px;
-    margin: 15px 0;
-    border-radius: 20px;
-    font-size: 25px;
 }
 
 footer {
     grid-row: 3/4;
     font-size: 14px;
+    margin-top: 60px;
 }
 
 /* form */
@@ -131,6 +123,7 @@ label {
     display: block;
     font-size: 18px;
 }
+
 select, input {
     display: block;
     width: 100%;
@@ -149,7 +142,83 @@ select, input {
     box-sizing: border-box;
 }
 
+.cta {
+    margin: 15px;
+    width: 91%;
+    height: 60px;
+    padding: 15px;
+    font-size: 25px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    color: #fff;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    background-color: black;
+}
 
+.cta::after {
+    content: "";
+    z-index: -1;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #333;
+    left: 0;
+    top: 0;
+    border-radius: 10px;
+}
+
+.cta::before {
+    content: "";
+    background: linear-gradient(
+        45deg, 
+        #ff0000, 
+        #ff7300, 
+        #fffb00, 
+        #48ff00, 
+        #00ffd5, 
+        #002bff, 
+        #ff00c8, 
+        #ff0000);
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background-size: 600%;
+    z-index: -1;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    filter: blur(8px);
+    animation: glow 8s infinite;
+    transition: opacity .3s ease-in-out;
+    border-radius: 10px;
+    opacity: 1;
+}
+
+
+@keyframes glow {
+    0% {
+        background-position: 0 0;
+    }
+
+    50% {
+        background-position: 400% 0;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}
+
+.cta-buttons {
+    grid-column: 1/3;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    justify-items: stretch;
+    margin-bottom: 30px;
+}
 
 @media screen and (min-width: 600px) {
     main {
@@ -167,21 +236,9 @@ select, input {
     .intro h1 {
         text-align: center;
     }
-    
 
-    button {
-        width: 90%;
-        height: 50px;
-        margin: 5%;
-        margin-top: 50px;
-        transition: background 1s ease-out, transform 1s ease-out;
-    }
-    
-    button:hover {
-        cursor: pointer;
-        background: #990da6;
-        transform: scale(1);
-        color: antiquewhite;
+    .cta {
+        top: 0%;
     }
 
     .preference-form form {
@@ -224,11 +281,12 @@ select, input {
     }
 
     /* Favorites */
-    #favorites {
+    #favorites, .surpriseResults{
         display: grid;
-        grid-template-columns: auto, auto;
+        grid-template-columns: 1fr 1fr;
         gap: 20px;
         grid-column: 1/3;
+        align-items: stretch;
     }
 
     #favMovies {
@@ -239,5 +297,12 @@ select, input {
         border: #0f172a solid 2px;
         border-radius: 12px;
         padding: 15px;
+        height: 100%;
     }
+
+    /* surprise */
+    #movieMount {
+        grid-column: 2/3;
+    }
+
 }
