@@ -3,14 +3,14 @@ import { getUberEats, HttpError } from "./restaurant.js";
 const $ = (s) => document.querySelector(s);
 
 const form = $("#foodForm");
-const resultsEl = $("#results");
+const resultsElement = $("#results");
 const btn = $("#resultsBtn");
 const categorySel = $("#foodCategory");
 const zipInput = $("#zip");
 const priceSel = $("#price-range");
 
 const movieForm = $("#movieForm");
-const movieResultsEl = $("#movieResults");
+const movieResultsElement = $("#movieResults");
 const movieBtn = $("#movieResultsBtn");
 const genreSel = $("#movieGenre");
 const yearInput = $("#minYear");
@@ -21,8 +21,8 @@ const progressTimers = [];
 const movieProgressTimers = [];
 const STORAGE_KEY = "favoriteList";
 
-function setResults(html) { if (resultsEl) resultsEl.innerHTML = html; }
-function setMovieResults(html) { if (movieResultsEl) movieResultsEl.innerHTML = html; }
+function setResults(html) { if (resultsElement) resultsElement.innerHTML = html; }
+function setMovieResults(html) { if (movieResultsElement) movieResultsElement.innerHTML = html; }
 function clearProgress() { progressTimers.splice(0).forEach(clearTimeout); }
 function clearMovieProgress() { movieProgressTimers.splice(0).forEach(clearTimeout); }
 
