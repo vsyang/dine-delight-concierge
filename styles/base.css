@@ -294,10 +294,29 @@ select, input {
     }
 
     #favFood, #favMovies {
-        border: #0f172a solid 2px;
         border-radius: 12px;
         padding: 15px;
         height: 100%;
+    }
+
+    #favFood h2,
+    #favMovies h2{
+        text-align: center;
+    }
+
+    .card {
+        min-height: 300px;
+        transition: border-radius 1s ease, 
+        transform 1s ease,
+        background-color 2s ease;
+    }
+    .card:hover {
+        border-top-left-radius: 75px;
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 75px;
+        border-bottom-left-radius: 3px;
+        transform: translateY(-2px);
+        background-color: #23048799;
     }
 
     /* surprise */
