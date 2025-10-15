@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/vsyang/dine-delight-concierge/issues"
   },
+  "overrides": {
+    "fast-redact": "3.x"
+  },
   "homepage": "https://github.com/vsyang/dine-delight-concierge#readme"
 }

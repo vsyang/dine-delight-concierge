@@ -1,52 +1,117 @@
-const KEY = import.meta.env.VITE_RAPIDAPI_KEY;  
-const BASE_URL = "https://imdb236.p.rapidapi.com/api/imdb/search";
+// netlify/functions/moviesSearch.js
+const HOST = "imdb236.p.rapidapi.com";
+const BASE = `https://${HOST}/api/imdb/search`;
 
-const headers = {
-  "x-rapidapi-key": KEY,
-  "x-rapidapi-host": "imdb236.p.rapidapi.com",
-};
-
-export async function searchMovies(query, year) {
-  if (!KEY) throw new Error("Missing VITE_RAPIDAPI_KEY in .env");
-
-  const params = new URLSearchParams({
-    type: "movie",
-    startYearFrom: year || "1900",
-    sortOrder: "ASC",
-    sortField: "id",
-    query, 
-  });
-
-  const url = `${BASE_URL}?${params.toString()}`;
-  console.log("Fetching:", url);
-
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`RapidAPI error ${res.status}`);
-  const data = await res.json();
-
-  const list = data.results || data.data || [];
-  return list.map((m) => ({
-    id: m.id,
-    title: m.title || m.name || "Untitled",
-    year: m.year || (m.releaseDate ? m.releaseDate.slice(0, 4) : "—"),
-    releaseDate: m.releaseDate || "",
-    description: m.plot || m.description || "",
-    image: m.imageUrl || m.poster || "",
-  }));
+function toArray(data) {
+  return Array.isArray(data) ? data
+       : Array.isArray(data?.items) ? data.items
+       : Array.isArray(data?.results) ? data.results
+       : Array.isArray(data?.data) ? data.data
+       : [];
 }
 
+function getYear(rec) {
+  const cands = [
+    rec?.startYear,
+    rec?.year, rec?.Year,
+    rec?.releaseYear, rec?.ReleaseYear,
+    rec?.release_date, rec?.ReleaseDate, rec?.date
+  ];
+  for (const c of cands) {
+    if (!c) continue;
+    if (typeof c === "number") return c;
+    const s = String(c);
+    const m = s.match(/\b(19|20)\d{2}\b/);
+    if (m) return Number(m[0]);
+    const d = new Date(s);
+    if (!isNaN(d)) return d.getFullYear();
+  }
+  return undefined;
+}
 
-export function pickBestMatch(results, query, year) {
-  if (!Array.isArray(results) || !results.length) return null;
-  const q = query.trim().toLowerCase();
+export async function handler(event) {
+  try {
+    const key = process.env.RAPIDAPI_KEY;
+    if (!key) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Missing RAPIDAPI_KEY" }) };
+    }
 
-  const exact = results.find(
-    (r) => r.title.toLowerCase() === q && (!year || String(r.year) === String(year))
-  );
-  if (exact) return exact;
+    const qp = new URLSearchParams(event.queryStringParameters || {});
+    const MinYear = qp.get("MinYear") || "2020";
+    const Genre = qp.get("Genre") || "Drama";
+    const Type = qp.get("Type") || "movie";  // 👈 NEW
+    const Limit = 5;
 
-  const byTitle = results.find((r) =>
-    r.title.toLowerCase().includes(q)
-  );
-  return byTitle || results[0];
+    const rows = String(Math.min(Math.max(Limit * 10, 25), 100));
+
+    const params = new URLSearchParams({
+      type: Type,             // 👈 Accepts "movie" or "tvSeries"
+      genre: Genre,
+      rows,
+      sortOrder: "DESC",
+      sortField: "startYear"
+    });
+
+    const url = `${BASE}?${params}`;
+    const r = await fetch(url, {
+      method: "GET",
+      headers: {
+        "x-rapidapi-key": key,
+        "x-rapidapi-host": HOST,
+        "accept": "application/json"
+      }
+    });
+
+    const text = await r.text();
+
+    if (!r.ok) {
+      if (r.status === 404) {
+        return {
+          statusCode: 200,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ items: [] })
+        };
+      }
+      return {
+        statusCode: r.status,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ error: "Upstream error", body: text })
+      };
+    }
+
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+    const arr = toArray(data);
+
+    const filtered = arr
+      .filter(it => {
+        const y = getYear(it);
+        return !MinYear || (y && y >= Number(MinYear));
+      })
+      .sort((a, b) => (getYear(b) || 0) - (getYear(a) || 0));
+
+    const items = filtered.slice(0, Limit).map(it => ({
+      id: it.id || it.imdbID,
+      title: it.primaryTitle || it.originalTitle || it.Title || it.title,
+      year: getYear(it),
+      runtime: it.runtimeMinutes || it.RuntimeMinutes || it.runtime || null,
+      description: it.description || it.plot || it.overview || it.storyline || "",
+      imageUrl:
+        (it.primaryImage && it.primaryImage.url) ||
+        it.primaryImage ||
+        (it.thumbnails && it.thumbnails[0]?.url) ||
+        null,
+    }));
+
+    return {
+      statusCode: 200,
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "public, max-age=300"
+      },
+      body: JSON.stringify({ items })
+    };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+  }
 }
