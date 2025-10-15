@@ -1,4 +1,13 @@
-// movie.js
+async function ensureOk(res) {
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const err = new Error(`HTTP ${res.status} ${res.statusText}`);
+    err.status = res.status;
+    err.body = text;
+    throw err;
+  } 
+  return res.json();
+}
 
 async function getMoviesViaFunction({ MinYear, Genre, Limit = 5 }, { signal } = {}) {
   const qs = new URLSearchParams();
@@ -6,30 +15,27 @@ async function getMoviesViaFunction({ MinYear, Genre, Limit = 5 }, { signal } = 
   if (Genre) qs.set('Genre', Genre);
   qs.set('Limit', String(Limit ?? 5));
 
-  // helper to fetch a specific function path and run ensureOk
   const tryPath = async (path) => {
     const resp = await fetch(`${path}?${qs}`, {
       signal,
       headers: { accept: 'application/json' }
     });
-    return ensureOk(resp); // will throw HttpError if not ok
+    return ensureOk(resp);
   };
 
-  // 1) moviesSearch (what preferences.js already uses)
   try {
     return await tryPath('/.netlify/functions/moviesSearch');
   } catch (err) {
     if (err?.status !== 404) throw err;
   }
 
-  // 2) moviesFilter (legacy/alt name)
   try {
     return await tryPath('/.netlify/functions/moviesFilter');
   } catch (err) {
     if (err?.status !== 404) throw err;
   }
 
-  // 3) fallback to direct RapidAPI if both functions are missing
+
   return getMoviesDirect({ MinYear, Genre, Limit }, { signal });
 }
 
