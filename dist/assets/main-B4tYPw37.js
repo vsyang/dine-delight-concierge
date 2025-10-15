@@ -1,0 +1,1 @@
+import"./base-DXfkrzV7.js";document.addEventListener("DOMContentLoaded",()=>{const t=JSON.parse(localStorage.getItem("favoriteList"))||[],e=document.getElementById("favoritesBtn");t.length||(e.style.display="none")});
